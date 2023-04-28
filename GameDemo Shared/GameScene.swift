@@ -11,6 +11,8 @@ class GameScene: SKScene {
     
     
     fileprivate var label : SKLabelNode?
+    var des : SKLabelNode?
+    lazy var car = SKSpriteNode(imageNamed: "car")
     fileprivate var spinnyNode : SKShapeNode?
 
     
@@ -30,6 +32,7 @@ class GameScene: SKScene {
     func setUpScene() {
         // Get label node from scene and store it for use later
         self.label = self.childNode(withName: "//helloLabel") as? SKLabelNode
+        self.des = self.childNode(withName: "//des") as? SKLabelNode
         if let label = self.label {
             label.alpha = 0.0
             label.run(SKAction.fadeIn(withDuration: 2.0))
@@ -46,6 +49,11 @@ class GameScene: SKScene {
                                               SKAction.fadeOut(withDuration: 0.5),
                                               SKAction.removeFromParent()]))
         }
+        
+        label?.isHidden = true
+        let carWidth: CGFloat = 200
+        car.size = .init(width: carWidth, height: 4320.0 / 7680 * carWidth)
+        addChild(car)
     }
     
     override func didMove(to view: SKView) {
@@ -58,6 +66,26 @@ class GameScene: SKScene {
             spinny.strokeColor = color
             self.addChild(spinny)
         }
+    }
+    
+    func changePosition(offset: CGPoint) {
+//        let origin = label?.position ?? .zero
+        let origin = car.position
+        
+        let newPosition = CGPoint.init(x: fixPosition(p: origin.x + offset.x, min: -500, max: 500),
+                                y: origin.y + offset.y)
+
+//        label?.position = newPosition
+        car.position = newPosition
+    }
+    
+    private func fixPosition(p: CGFloat, min: CGFloat, max: CGFloat) -> CGFloat {
+        if p < min {
+            return min
+        } else if p > max {
+            return max
+        }
+        return p
     }
     
     override func update(_ currentTime: TimeInterval) {
