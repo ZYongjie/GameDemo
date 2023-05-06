@@ -17,16 +17,18 @@ class GameViewController: NSViewController {
         super.viewDidLoad()
         
         let scene = GameScene.newGameScene()
+        scene.carDelegate = self
         self.scene = scene
         
         // Present the scene
         let skView = self.view as! SKView
         skView.presentScene(scene)
         
-        skView.ignoresSiblingOrder = true
+//        skView.ignoresSiblingOrder = true
         
         skView.showsFPS = true
         skView.showsNodeCount = true
+        skView.showsPhysics = true
         
         setupSocket()
     }
@@ -72,11 +74,24 @@ extension GameViewController: GCDAsyncSocketDelegate {
                 print("read", dic?["tag"])
                 newSockets.first?.readData(withTimeout: -1, tag: 1)
                 if let x = dic?["xOffset"] as? CGFloat {
-                    scene?.changePosition(offset: .init(x: x, y: 0))
+//                    scene?.changePosition(offset: .init(x: x, y: 0))
+                    scene?.applyImpulse(dx: abs(x) < 1 ? 0 : x)
                 }
                 
             }
     }
+}
+
+extension GameViewController: CarGameSceneDelegate {
+    func scene(didContactTrack scene: GameScene) {
+        
+    }
+    
+    func scene(didContactObstacle scene: GameScene) {
+        
+    }
+    
+    
 }
 
 extension Data {
