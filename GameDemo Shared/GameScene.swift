@@ -89,6 +89,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         car.physicsBody = .init(rectangleOf: car.size)
 //        car.physicsBody = .init(edgeLoopFrom: .init(origin: .init(x: -100, y: -4320.0 / 7680 * carWidth / 2), size: car.size))
         car.physicsBody?.categoryBitMask = 1
+        car.physicsBody?.contactTestBitMask = 0
+        car.physicsBody?.collisionBitMask = 0
         car.physicsBody?.affectedByGravity = false
         addChild(car)
         
@@ -102,6 +104,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         setupPhysicsSpeed(dy: carSpeed)
         
         makeObstacle()
+        currentMediaIndex = 0
+        makeMedia()
         
         state = .playing
     }
@@ -189,10 +193,38 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         obstacle.position = .init(x: x, y: y)
         obstacle.physicsBody = .init(rectangleOf: .init(width: 100, height: 100))
         obstacle.physicsBody?.contactTestBitMask = 1
+        obstacle.physicsBody?.categoryBitMask = 0
         obstacle.physicsBody?.isDynamic = false
         addChild(obstacle)
         
         obstacles.append(obstacle)
+    }
+    
+    var media: SKNode?
+    var mediaList = (97...122).map({Character(UnicodeScalar($0))})
+    var currentMediaIndex = 0
+    func makeMedia() {
+        guard currentMediaIndex < mediaList.count else {
+            return
+        }
+        let wrapper = SKSpriteNode(color: .purple, size: .init(width: 100, height: 100))
+        let text = SKLabelNode(text: .init(mediaList[currentMediaIndex].uppercased()))
+        let x = CGFloat((-300...300).randomElement() ?? 0)
+        let y = CGFloat((0...200).randomElement() ?? 0) + car.position.y + 400
+        wrapper.position = .init(x: x, y: y)
+        wrapper.physicsBody = .init(rectangleOf: .init(width: 100, height: 100))
+        
+        wrapper.physicsBody?.categoryBitMask = 1 << 1
+        wrapper.physicsBody?.contactTestBitMask = 1
+//        wrapper.physicsBody?.collisionBitMask = 0
+        
+//        wrapper.physicsBody.
+//        wrapper.physicsBody?.isDynamic = false
+        wrapper.physicsBody?.affectedByGravity = false
+        wrapper.physicsBody?.density = 0
+        wrapper.addChild(text)
+        addChild(wrapper)
+        media = wrapper
     }
     
     func applyImpulse(dx: CGFloat) {
@@ -245,6 +277,11 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         if obstacles.count < 2 {
             makeObstacle()
         }
+        
+        if let media = media, media.position.y < car.position.y , !camera!.contains(media) {
+            media.removeFromParent()
+            makeMedia()
+        }
     }
     
     func didBegin(_ contact: SKPhysicsContact) {
@@ -255,6 +292,13 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         }
         if [leftTrack, rightTrack].map({ $0.physicsBody! }).contains(where: { $0 === contact.bodyA || $0 === contact.bodyB }) {
             carDelegate?.scene(didContactTrack: self)
+        }
+        
+        if let media = media, Set(arrayLiteral: contact.bodyA, contact.bodyB) == Set(arrayLiteral: media.physicsBody!, car.physicsBody!) {
+            print("======= contact media")
+            media.removeFromParent()
+            currentMediaIndex += 1
+            makeMedia()
         }
     }
     
