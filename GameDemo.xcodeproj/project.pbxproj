@@ -25,6 +25,14 @@
 		6F3A24BA29FB57C700CC8DBD /* GameScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F3A249429FB57C600CC8DBD /* GameScene.swift */; };
 		6F3A24BB29FB57C700CC8DBD /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 6F3A249529FB57C700CC8DBD /* Assets.xcassets */; };
 		6F3A24BC29FB57C700CC8DBD /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 6F3A249529FB57C700CC8DBD /* Assets.xcassets */; };
+		6FF3D54C2A0886D700FDED71 /* Actions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FF3D54B2A0886D700FDED71 /* Actions.swift */; };
+		6FF3D54D2A0886D700FDED71 /* Actions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FF3D54B2A0886D700FDED71 /* Actions.swift */; };
+		6FF3D54F2A089E3600FDED71 /* DataExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FF3D54E2A089E3600FDED71 /* DataExtension.swift */; };
+		6FF3D5502A089E3600FDED71 /* DataExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FF3D54E2A089E3600FDED71 /* DataExtension.swift */; };
+		6FF3D5522A08E1FD00FDED71 /* TcpSocket.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FF3D5512A08E1FD00FDED71 /* TcpSocket.swift */; };
+		6FF3D5532A08E1FD00FDED71 /* TcpSocket.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FF3D5512A08E1FD00FDED71 /* TcpSocket.swift */; };
+		6FF3D5552A08E20500FDED71 /* UdpSocket.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FF3D5542A08E20500FDED71 /* UdpSocket.swift */; };
+		6FF3D5562A08E20500FDED71 /* UdpSocket.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FF3D5542A08E20500FDED71 /* UdpSocket.swift */; };
 		C8B3771E71F4B8499C730BA8 /* Pods_GameDemo_macOS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9C4F1FFED8D3862352F8F873 /* Pods_GameDemo_macOS.framework */; };
 /* End PBXBuildFile section */
 
@@ -48,6 +56,10 @@
 		6F3A24B229FB57C700CC8DBD /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		6F3A24B429FB57C700CC8DBD /* GameDemo_macOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = GameDemo_macOS.entitlements; sourceTree = "<group>"; };
 		6F3A24C529FBB39C00CC8DBD /* GameDemo iOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "GameDemo iOS.entitlements"; sourceTree = "<group>"; };
+		6FF3D54B2A0886D700FDED71 /* Actions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Actions.swift; sourceTree = "<group>"; };
+		6FF3D54E2A089E3600FDED71 /* DataExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataExtension.swift; sourceTree = "<group>"; };
+		6FF3D5512A08E1FD00FDED71 /* TcpSocket.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TcpSocket.swift; sourceTree = "<group>"; };
+		6FF3D5542A08E20500FDED71 /* UdpSocket.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UdpSocket.swift; sourceTree = "<group>"; };
 		9C4F1FFED8D3862352F8F873 /* Pods_GameDemo_macOS.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_GameDemo_macOS.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		B60EED2961B6FE67DF3E3FD3 /* Pods-GameDemo iOS.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-GameDemo iOS.release.xcconfig"; path = "Target Support Files/Pods-GameDemo iOS/Pods-GameDemo iOS.release.xcconfig"; sourceTree = "<group>"; };
 		D581EACAAF359BFD24905AA0 /* Pods_GameDemo_iOS.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_GameDemo_iOS.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -92,6 +104,10 @@
 				6F3A249329FB57C600CC8DBD /* GameScene.sks */,
 				6F3A249429FB57C600CC8DBD /* GameScene.swift */,
 				6F032B522A036B0000F09127 /* SKScrollingNode.swift */,
+				6FF3D54B2A0886D700FDED71 /* Actions.swift */,
+				6FF3D54E2A089E3600FDED71 /* DataExtension.swift */,
+				6FF3D5512A08E1FD00FDED71 /* TcpSocket.swift */,
+				6FF3D5542A08E20500FDED71 /* UdpSocket.swift */,
 				6F3A249529FB57C700CC8DBD /* Assets.xcassets */,
 			);
 			path = "GameDemo Shared";
@@ -339,7 +355,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6FF3D54C2A0886D700FDED71 /* Actions.swift in Sources */,
+				6FF3D5522A08E1FD00FDED71 /* TcpSocket.swift in Sources */,
+				6FF3D54F2A089E3600FDED71 /* DataExtension.swift in Sources */,
 				6F3A24B929FB57C700CC8DBD /* GameScene.swift in Sources */,
+				6FF3D5552A08E20500FDED71 /* UdpSocket.swift in Sources */,
 				6F032B532A036B0000F09127 /* SKScrollingNode.swift in Sources */,
 				6F3A24A029FB57C700CC8DBD /* GameViewController.swift in Sources */,
 				6F3A249E29FB57C700CC8DBD /* AppDelegate.swift in Sources */,
@@ -350,7 +370,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6FF3D54D2A0886D700FDED71 /* Actions.swift in Sources */,
+				6FF3D5532A08E1FD00FDED71 /* TcpSocket.swift in Sources */,
+				6FF3D5502A089E3600FDED71 /* DataExtension.swift in Sources */,
 				6F3A24BA29FB57C700CC8DBD /* GameScene.swift in Sources */,
+				6FF3D5562A08E20500FDED71 /* UdpSocket.swift in Sources */,
 				6F032B542A036B0000F09127 /* SKScrollingNode.swift in Sources */,
 				6F3A24B029FB57C700CC8DBD /* GameViewController.swift in Sources */,
 				6F3A24AE29FB57C700CC8DBD /* AppDelegate.swift in Sources */,

@@ -32,7 +32,15 @@ class GameViewController: UIViewController {
         skView.showsPhysics = true
         
         setupMotion()
-        setupSocket()
+        setupGestures()
+    }
+    
+    override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
+        return .landscapeLeft
+    }
+
+    override var prefersStatusBarHidden: Bool {
+        return true
     }
     
     private lazy var motionManager = CMMotionManager()
@@ -67,19 +75,10 @@ class GameViewController: UIViewController {
 //            self.scene?.changePosition(offset: .init(x: xOffset, y: 0))
             self.scene?.applyImpulse(dx: xOffset)
             
-            if self.socket.isConnected {
-                let d = [
-                    "xOffset": xOffset,
-                    "tag": self.tag
-                ]
-                
-                var json = try! JSONSerialization.data(withJSONObject: d)
-                json.append("---".data(using: .utf8)!)
-                
-                //TODO 发送频率过高，会导致消息积压，多条消息合并发送
-                self.socket.write(json, withTimeout: 1, tag: self.tag)
-                self.tag += 1
-            }
+            self.udpSocket.sendMessage([
+                MessageKey.actionName.rawValue: ClientAction.accelerate.rawValue,
+                MessageKey.impulse.rawValue: xOffset,
+            ])
         }
         
         motionManager.gyroUpdateInterval = 1 / 60
@@ -113,44 +112,55 @@ class GameViewController: UIViewController {
         generator.impactOccurred()
     }
     
-    var tag = 0
-    lazy var socket = GCDAsyncSocket(delegate: self, delegateQueue: .main)
-    func setupSocket() {
-        do {
-//            try socket.connect(toHost: "172.20.10.7", onPort: 4000, withTimeout: 3)
-            try socket.connect(toHost: "192.168.241.64", onPort: 4000, withTimeout: 3)
-        } catch let error {
-            print("connect error", error)
+//    lazy var udpSocket = UdpClientSocket(remoteHost: "172.20.10.7", port: 4002, delegate: self)
+    lazy var udpSocket = UdpClientSocket(remoteHost: "192.168.241.64", port: 4002, delegate: self)
+    
+    //MARK: ---------- handle actions ---------
+    func handleAction(_ dic: [String: Any]) {
+        switch SeverAction(rawValue: dic[MessageKey.actionName.rawValue] as! String) {
+        case .impactFeedback:
+            startVibrate(.init(rawValue: dic[MessageKey.feedbackStyle.rawValue] as! Int)!)
+        default:
+            break
         }
     }
-
-    override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
-        return .landscapeLeft
-        if UIDevice.current.userInterfaceIdiom == .phone {
-            return .allButUpsideDown
-        } else {
-            return .all
-        }
+    
+    //MARK: ---------- gestures ---------
+    func setupGestures() {
+        let tap = UITapGestureRecognizer(target: self, action: #selector(didTapSelf))
+        let longPress = UILongPressGestureRecognizer(target: self, action: #selector(didLongPress(sender:)))
+        
+        [tap, longPress].forEach({ view.addGestureRecognizer($0) })
     }
-
-    override var prefersStatusBarHidden: Bool {
-        return true
+        
+    @objc func didTapSelf() {
+        udpSocket.sendMessage([
+            MessageKey.actionName.rawValue: ClientAction.didTap.rawValue
+        ])
+    }
+    
+    @objc private func didLongPress(sender: UIGestureRecognizer) {
+        switch sender.state {
+        case .began:
+            udpSocket.sendMessage([
+                MessageKey.actionName.rawValue: ClientAction.startLongPress.rawValue
+            ])
+        case .cancelled, .ended, .failed:
+            udpSocket.sendMessage([
+                MessageKey.actionName.rawValue: ClientAction.stopLongPress.rawValue
+            ])
+        default:
+            break
+        }
     }
 }
 
-extension GameViewController: GCDAsyncSocketDelegate {
-    func socket(_ sock: GCDAsyncSocket, didConnectToHost host: String, port: UInt16) {
-        
-        print("!!!!!! connected !!!!!!")
+extension GameViewController: SocketDelegate {
+    func socket(_ socket: SocketProtocol, didReceiveMessages messages: [[String : Any]]) {
+        messages.forEach { msg in
+            handleAction(msg)
+        }
     }
-    
-    func socketDidDisconnect(_ sock: GCDAsyncSocket, withError err: Error?) {
-        print("disconnected", err)
-    }
-    
-    func socket(_ sock: GCDAsyncSocket, didWriteDataWithTag tag: Int) {
-    }
-    
 }
 
 extension Double {
@@ -167,6 +177,4 @@ extension GameViewController: CarGameSceneDelegate {
     func scene(didContactObstacle scene: GameScene) {
         startVibrate(.heavy)
     }
-    
-    
 }

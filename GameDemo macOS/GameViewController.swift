@@ -30,87 +30,48 @@ class GameViewController: NSViewController {
         skView.showsNodeCount = true
         skView.showsPhysics = true
         
-        setupSocket()
+        _ = udpSocket
     }
     
-    lazy var socket = GCDAsyncSocket(delegate: self, delegateQueue: .main)
-    var newSockets = [GCDAsyncSocket]()
-    func setupSocket() {
-        do {
-            try socket.accept(onPort: 4000)
-        } catch let error {
-            print("socket accept error", error)
+    lazy var udpSocket = UdpSeverSocket(port: 4002, delegate: self)
+    
+    //MARK: ---------- handle actions ---------
+    func handleAction(_ dic: [String: Any]) {
+        switch ClientAction(rawValue: dic[MessageKey.actionName.rawValue] as! String) {
+        case .accelerate:
+            scene?.applyImpulse(dx: dic[MessageKey.impulse.rawValue] as! CGFloat)
+        case .didTap:
+            if scene?.state == .over {
+                scene?.replay()
+            }
+            
+        default:
+            break
         }
-        
     }
 }
 
-extension GameViewController: GCDAsyncSocketDelegate {
-    func socket(_ sock: GCDAsyncSocket, didAcceptNewSocket newSocket: GCDAsyncSocket) {
-        print("socket accept new")
-        
-        newSockets.append(newSocket)
-        newSocket.readData(to: "---".data(using: .utf8), withTimeout: -1, tag: 1)
-    }
-    
-    func socketDidDisconnect(_ sock: GCDAsyncSocket, withError err: Error?) {
-        print("disconnect", err)
-        newSockets.removeAll(where: { $0 == sock})
-    }
-    
-    func socketDidCloseReadStream(_ sock: GCDAsyncSocket) {
-        print("close")
-    }
-    
-    func socket(_ sock: GCDAsyncSocket, didRead data: Data, withTag tag: Int) {
-        var d = data
-        let t = "---".data(using: .utf8)!
-//        //todo 保留最后一个有效数据
-//        d.removeSubrange(d.range(of: t)!.startIndex..<d.count)
-        
-        data.split(separator: t)
-            .forEach { d in
-                let dic = try? JSONSerialization.jsonObject(with: d) as? [String: Any]
-                print("read", dic?["tag"])
-                newSockets.first?.readData(withTimeout: -1, tag: 1)
-                if let x = dic?["xOffset"] as? CGFloat {
-//                    scene?.changePosition(offset: .init(x: x, y: 0))
-                    scene?.applyImpulse(dx: abs(x) < 1 ? 0 : x)
-                }
-                
-            }
+extension GameViewController: SocketDelegate {
+    func socket(_ socket: SocketProtocol, didReceiveMessages messages: [[String : Any]]) {
+        messages.forEach { msg in
+            handleAction(msg)
+        }
     }
 }
 
 extension GameViewController: CarGameSceneDelegate {
     func scene(didContactTrack scene: GameScene) {
-        
+        udpSocket.sendMessage([
+            MessageKey.actionName.rawValue: SeverAction.impactFeedback.rawValue,
+            MessageKey.feedbackStyle.rawValue: 0
+        ])
     }
-    
-    func scene(didContactObstacle scene: GameScene) {
-        
-    }
-    
-    
-}
 
-extension Data {
-    func split(separator: Data) -> [Data] {
-        var chunks: [Data] = []
-        var pos = startIndex
-        // Find next occurrence of separator after current position:
-        while let r = self[pos...].range(of: separator) {
-            // Append if non-empty:
-            if r.lowerBound > pos {
-                chunks.append(self[pos..<r.lowerBound])
-            }
-            // Update current position:
-            pos = r.upperBound
-        }
-        // Append final chunk, if non-empty:
-        if pos < endIndex {
-            chunks.append(self[pos..<endIndex])
-        }
-        return chunks
+    func scene(didContactObstacle scene: GameScene) {
+        udpSocket.sendMessage([
+            MessageKey.actionName.rawValue: SeverAction.impactFeedback.rawValue,
+            MessageKey.feedbackStyle.rawValue: 1
+        ])
     }
+    
 }

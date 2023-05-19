@@ -38,8 +38,14 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         
         // Set the scale mode to scale to fit the window
         scene.scaleMode = .aspectFill
+//        scene.scaleMode = .resizeFill
         
         return scene
+    }
+    
+    func replay() {
+        removeAllChildren()
+        setUpScene()
     }
     
     func setUpScene() {
@@ -76,7 +82,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         createTrack()
         
         let carWidth: CGFloat = 200
-        car = SKSpriteNode(imageNamed: "car")
+//        car = SKSpriteNode(imageNamed: "car")
+        car = SKSpriteNode(color: .blue, size: .zero)
         car.size = .init(width: carWidth, height: 4320.0 / 7680 * carWidth)
         car.position = .init(x: 0, y: -200)
         car.physicsBody = .init(rectangleOf: car.size)
@@ -101,6 +108,14 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     
     override func didMove(to view: SKView) {
         self.setUpScene()
+    }
+    
+    override func didChangeSize(_ oldSize: CGSize) {
+        super.didChangeSize(oldSize)
+        
+//        print("did changeSize", size)
+//        bg.size = size
+//        bg.position = .init(x: -size.width / 2, y: -size.height / 2)
     }
     
     lazy var leftTrack = SKShapeNode(rect: .init(x: -500, y: -size.height / 2, width: 2, height: size.height))
@@ -233,7 +248,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     }
     
     func didBegin(_ contact: SKPhysicsContact) {
-        print("-----------------", contact.bodyA, contact.bodyB)
+//        print("-----------------", contact.bodyA, contact.bodyB)
         if obstacles.map({ $0.physicsBody }).contains(where: { $0 === contact.bodyA || $0 === contact.bodyB }) {
             carDelegate?.scene(didContactObstacle: self)
             gameOver()
@@ -257,9 +272,7 @@ extension GameScene {
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         if state == .over {
-            removeAllChildren()
-            
-            setUpScene()
+            replay()
         }
         if state == .playing {
             speedUpOffset = 1
@@ -309,9 +322,7 @@ extension GameScene {
 
     override func mouseDown(with event: NSEvent) {
         if state == .over {
-            removeAllChildren()
-            
-            setUpScene()
+            replay()
         }
         
         if let label = self.label {

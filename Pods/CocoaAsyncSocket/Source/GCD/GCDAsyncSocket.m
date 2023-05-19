@@ -28,6 +28,7 @@
 #import <sys/uio.h>
 #import <sys/un.h>
 #import <unistd.h>
+#import <netinet/tcp.h>
 
 #if ! __has_feature(objc_arc)
 #warning This file must be compiled with ARC. Use -fobjc-arc flag (or convert project to ARC).
@@ -2060,6 +2061,10 @@ enum GCDAsyncSocketConfig
 	
 	int nosigpipe = 1;
 	setsockopt(childSocketFD, SOL_SOCKET, SO_NOSIGPIPE, &nosigpipe, sizeof(nosigpipe));
+    
+    int nodelay = 1;
+    setsockopt(childSocketFD, SOL_SOCKET, TCP_NODELAY, &nodelay, sizeof(nodelay));
+
 	
 	// Notify delegate
 	
@@ -2720,6 +2725,9 @@ enum GCDAsyncSocketConfig
     
     int nosigpipe = 1;
     setsockopt(socketFD, SOL_SOCKET, SO_NOSIGPIPE, &nosigpipe, sizeof(nosigpipe));
+    
+    int nodelay = 1;
+    setsockopt(socketFD, SOL_SOCKET, TCP_NODELAY, &nodelay, sizeof(nodelay));
     
     return socketFD;
 }
