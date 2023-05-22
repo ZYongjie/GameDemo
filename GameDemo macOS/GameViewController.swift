@@ -37,7 +37,11 @@ class GameViewController: NSViewController {
     
     //MARK: ---------- handle actions ---------
     func handleAction(_ dic: [String: Any]) {
-        switch ClientAction(rawValue: dic[MessageKey.actionName.rawValue] as! String) {
+        guard let action = ClientAction(rawValue: dic[MessageKey.actionName.rawValue] as! String) else {
+            return
+        }
+        
+        switch action {
         case .accelerate:
             scene?.applyImpulse(dx: dic[MessageKey.impulse.rawValue] as! CGFloat)
         case .didTap:
@@ -48,6 +52,8 @@ class GameViewController: NSViewController {
         default:
             break
         }
+        
+        scene?.hanle(client: action)
     }
 }
 

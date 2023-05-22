@@ -14,12 +14,18 @@ protocol CarGameSceneDelegate: AnyObject {
 
 class GameScene: SKScene, SKPhysicsContactDelegate {
     enum State {
-        case idle, playing, over
+        case idle, playing, over, passed
     }
     var state = State.idle
     
-    let carSpeed: CGFloat = 100
+    let carSpeed: CGFloat = 200
     let maxCarSpeed: CGFloat = 500
+    
+    let carCategoryMask: UInt32 = 1
+    let edgeCategoryMask: UInt32 = 1 << 1
+    let obstacleCategoryMask: UInt32 = 1 << 2
+    
+    let noCollisionCategoryMask: UInt32 = 1 << 31
     
     weak var carDelegate: CarGameSceneDelegate?
     fileprivate var label : SKLabelNode?
@@ -87,17 +93,15 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         car.size = .init(width: carWidth, height: 4320.0 / 7680 * carWidth)
         car.position = .init(x: 0, y: -200)
         car.physicsBody = .init(rectangleOf: car.size)
-//        car.physicsBody = .init(edgeLoopFrom: .init(origin: .init(x: -100, y: -4320.0 / 7680 * carWidth / 2), size: car.size))
-        car.physicsBody?.categoryBitMask = 1
-        car.physicsBody?.contactTestBitMask = 0
-        car.physicsBody?.collisionBitMask = 0
+        car.physicsBody?.categoryBitMask = carCategoryMask
+        car.physicsBody?.contactTestBitMask = 0xFFFFFFFF
+        car.physicsBody?.collisionBitMask = 0xFFFFFFFF ^ noCollisionCategoryMask
         car.physicsBody?.affectedByGravity = false
         addChild(car)
         
         let camera = SKCameraNode()
         camera.physicsBody = .init()
         camera.physicsBody?.affectedByGravity = false
-//        camera.setScale(2)
         addChild(camera)
         self.camera = camera
         
@@ -116,10 +120,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     
     override func didChangeSize(_ oldSize: CGSize) {
         super.didChangeSize(oldSize)
-        
-//        print("did changeSize", size)
-//        bg.size = size
-//        bg.position = .init(x: -size.width / 2, y: -size.height / 2)
     }
     
     lazy var leftTrack = SKShapeNode(rect: .init(x: -500, y: -size.height / 2, width: 2, height: size.height))
@@ -129,7 +129,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         leftTrack.physicsBody = .init(rectangleOf: leftTrack.frame.size, center: .init(x: leftTrack.frame.origin.x, y: 0))
         leftTrack.physicsBody?.affectedByGravity = false
         leftTrack.physicsBody?.isDynamic = false
-        leftTrack.physicsBody?.contactTestBitMask = 1
+        leftTrack.physicsBody?.categoryBitMask = edgeCategoryMask
         leftTrack.physicsBody?.friction = 0
         addChild(leftTrack)
         
@@ -137,13 +137,12 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         rightTrack.physicsBody = .init(rectangleOf: rightTrack.frame.size, center: .init(x: rightTrack.frame.origin.x, y: 0))
         rightTrack.physicsBody?.affectedByGravity = false
         rightTrack.physicsBody?.isDynamic = false
-        rightTrack.physicsBody?.contactTestBitMask = 1
+        rightTrack.physicsBody?.categoryBitMask = edgeCategoryMask
         rightTrack.physicsBody?.friction = 0
         addChild(rightTrack)
     }
     
     func setupPhysicsSpeed(dy: CGFloat) {
-//                print("---speed", dy)
 
         [
             bg.physicsBody,
@@ -159,13 +158,20 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     
     var speedTimer: Timer?
     var speedUpOffset = 0.0
-    func speedUp() {
-        guard state == .playing, car.physicsBody!.velocity.dy <= maxCarSpeed else {
-            return
-        }
+    @objc func speedUp() {
         
-        setupPhysicsSpeed(dy: max(carSpeed + speedUpOffset, maxCarSpeed))
-        speedUpOffset += 20
+//        perform(#selector(speedUp), with: nil, afterDelay: 0.1)
+        speedTimer = .scheduledTimer(withTimeInterval: 0.1, repeats: true, block: { [weak self] _ in
+            guard let self = self, self.state == .playing, self.car.physicsBody!.velocity.dy <= self.maxCarSpeed else {
+                self?.speedTimer?.invalidate()
+                self?.speedTimer = nil
+                return
+            }
+            
+            self.setupPhysicsSpeed(dy: min(self.carSpeed + self.speedUpOffset, self.maxCarSpeed))
+            self.speedUpOffset += 20
+        })
+        speedTimer?.fire()
     }
     
     func resetSpeed() {
@@ -193,15 +199,18 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         obstacle.position = .init(x: x, y: y)
         obstacle.physicsBody = .init(rectangleOf: .init(width: 100, height: 100))
         obstacle.physicsBody?.contactTestBitMask = 1
-        obstacle.physicsBody?.categoryBitMask = 0
+        obstacle.physicsBody?.categoryBitMask = 1
         obstacle.physicsBody?.isDynamic = false
         addChild(obstacle)
         
         obstacles.append(obstacle)
     }
     
+    lazy var audioPlay = AudioPlay()
     var media: SKNode?
     var mediaList = (97...122).map({Character(UnicodeScalar($0))})
+//    var mediaList = (97...98).map({Character(UnicodeScalar($0))})
+    var moodList = ["good_job", "well_done", "excellent", "great_job", "fantastic", "outstanding", "impressive", "terrific", "superb"]
     var currentMediaIndex = 0
     func makeMedia() {
         guard currentMediaIndex < mediaList.count else {
@@ -209,13 +218,17 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         }
         let wrapper = SKSpriteNode(color: .purple, size: .init(width: 100, height: 100))
         let text = SKLabelNode(text: .init(mediaList[currentMediaIndex].uppercased()))
+        text.fontSize = 50
+        text.fontName = "PingFangSC-Medium"
+        text.verticalAlignmentMode = .center
         let x = CGFloat((-300...300).randomElement() ?? 0)
         let y = CGFloat((0...200).randomElement() ?? 0) + car.position.y + 400
         wrapper.position = .init(x: x, y: y)
         wrapper.physicsBody = .init(rectangleOf: .init(width: 100, height: 100))
+        wrapper.anchorPoint = .init(x: 0.5, y: 0.5)
         
-        wrapper.physicsBody?.categoryBitMask = 1 << 1
-        wrapper.physicsBody?.contactTestBitMask = 1
+        wrapper.physicsBody?.categoryBitMask = noCollisionCategoryMask
+//        wrapper.physicsBody?.contactTestBitMask = 1
 //        wrapper.physicsBody?.collisionBitMask = 0
         
 //        wrapper.physicsBody.
@@ -248,12 +261,34 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         }
     }
     
+    func gamePassed() {
+        state = .passed
+        
+        setupPhysicsSpeed(dy: 0)
+        gamePassedNode.position = .init(x: 0, y: car.position.y + 200)
+        if gamePassedNode.parent == nil  {
+            addChild(gamePassedNode)
+        }
+    }
+    
     lazy var gameOverNode: SKNode = {
         let bg = SKSpriteNode(color: .gray.withAlphaComponent(0.3), size: .init(width: 500, height: 400))
-        let over = SKLabelNode(text: "Game over")
+        let over = SKLabelNode(text: "Game over ❌")
         over.fontSize = 100
+        over.fontName = "PingFangSC-Medium"
         over.fontColor = .orange
         bg.addChild(over)
+        
+        return bg
+    }()
+    
+    lazy var gamePassedNode: SKNode = {
+        let bg = SKSpriteNode(color: .gray.withAlphaComponent(0.3), size: .init(width: 500, height: 400))
+        let passed = SKLabelNode(text: "Passed ✅")
+        passed.fontSize = 100
+        passed.fontName = "PingFangSC-Medium"
+        passed.fontColor = .orange
+        bg.addChild(passed)
         
         return bg
     }()
@@ -278,7 +313,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             makeObstacle()
         }
         
-        if let media = media, media.position.y < car.position.y , !camera!.contains(media) {
+        if let media = media, media.position.y < car.position.y , !camera!.contains(media), media.parent != nil {
             media.removeFromParent()
             makeMedia()
         }
@@ -297,8 +332,29 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         if let media = media, Set(arrayLiteral: contact.bodyA, contact.bodyB) == Set(arrayLiteral: media.physicsBody!, car.physicsBody!) {
             print("======= contact media")
             media.removeFromParent()
-            currentMediaIndex += 1
-            makeMedia()
+            
+            let index = currentMediaIndex
+            let step = self.mediaList.count / self.moodList.count
+            let playMood = step > 0 && (index + 1) % step == 0 && index < self.mediaList.count - 1
+            
+            DispatchQueue.global().async {
+                self.audioPlay.play(character: self.mediaList[index])
+                
+                if playMood {
+                    DispatchQueue.global().asyncAfter(deadline: .now() + 1)  {
+                        self.audioPlay.play(mood: self.moodList[(index + 1) / step])
+                    }
+                }
+            }
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + (playMood ? 2 : 0)) {
+                self.currentMediaIndex += 1
+                self.makeMedia()
+            }
+            
+            if currentMediaIndex == mediaList.count {
+                gamePassed()
+            }
         }
     }
     
@@ -315,15 +371,15 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 extension GameScene {
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        if state == .over {
-            replay()
-        }
+//        if state == .over {
+//            replay()
+//        }
         if state == .playing {
             speedUpOffset = 1
             
             speedTimer?.invalidate()
             speedTimer = .scheduledTimer(withTimeInterval: 0.2, repeats: true, block: { [weak self] _ in
-                self?.speedUp()
+//                self?.speedUp()
             })
         }
         
@@ -347,7 +403,7 @@ extension GameScene {
             self.makeSpinny(at: t.location(in: self), color: SKColor.red)
         }
         
-        resetSpeed()
+//        resetSpeed()
     }
     
     override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
@@ -355,7 +411,7 @@ extension GameScene {
             self.makeSpinny(at: t.location(in: self), color: SKColor.red)
         }
         
-        resetSpeed()
+//        resetSpeed()
     }
 }
 #endif

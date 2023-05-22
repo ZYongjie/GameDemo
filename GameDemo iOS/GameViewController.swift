@@ -57,7 +57,7 @@ class GameViewController: UIViewController {
 //                return
 //            }
             
-//            print("acceleration y:", y)
+            print("acceleration y:", y.twoDecimals)
             
             var xOffset = 0.0
             switch abs(y) {
@@ -114,6 +114,12 @@ class GameViewController: UIViewController {
     
 //    lazy var udpSocket = UdpClientSocket(remoteHost: "172.20.10.7", port: 4002, delegate: self)
     lazy var udpSocket = UdpClientSocket(remoteHost: "192.168.241.64", port: 4002, delegate: self)
+    private func send(action: ClientAction, for messageKey: MessageKey) {
+        udpSocket.sendMessage([
+            messageKey.rawValue: action.rawValue
+        ])
+        scene?.hanle(client: action)
+    }
     
     //MARK: ---------- handle actions ---------
     func handleAction(_ dic: [String: Any]) {
@@ -134,21 +140,24 @@ class GameViewController: UIViewController {
     }
         
     @objc func didTapSelf() {
-        udpSocket.sendMessage([
-            MessageKey.actionName.rawValue: ClientAction.didTap.rawValue
-        ])
+        send(action: .didTap, for: .actionName)
+//        udpSocket.sendMessage([
+//            MessageKey.actionName.rawValue: ClientAction.didTap.rawValue
+//        ])
     }
     
     @objc private func didLongPress(sender: UIGestureRecognizer) {
         switch sender.state {
         case .began:
-            udpSocket.sendMessage([
-                MessageKey.actionName.rawValue: ClientAction.startLongPress.rawValue
-            ])
+            send(action: .startLongPress, for: .actionName)
+//            udpSocket.sendMessage([
+//                MessageKey.actionName.rawValue: ClientAction.startLongPress.rawValue
+//            ])
         case .cancelled, .ended, .failed:
-            udpSocket.sendMessage([
-                MessageKey.actionName.rawValue: ClientAction.stopLongPress.rawValue
-            ])
+            send(action: .stopLongPress, for: .actionName)
+//            udpSocket.sendMessage([
+//                MessageKey.actionName.rawValue: ClientAction.stopLongPress.rawValue
+//            ])
         default:
             break
         }
